@@ -34,7 +34,7 @@ jobs:
         working-directory: ./terraform
         env:
           # Terraform uses the Azure Login from step 1 automatically
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Optional: If you have issues, you might need this
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Optional, often auto-detected
           
       # --- 3. Build Application ---
       - name: Set up .NET Core
