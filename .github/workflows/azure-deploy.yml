@@ -12,6 +12,31 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # --- 1. Log into Azure ---
+      # This uses the AZURE_CREDENTIALS secret you created.
+      # It logs the 'runner' into Azure so Terraform and the Deploy step can work.
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # --- 2. Infrastructure (Terraform) ---
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform  # <--- Points to your subfolder
+
+      - name: Terraform Apply
+        # -auto-approve ensures it doesn't wait for "yes"
+        run: terraform apply -auto-approve
+        working-directory: ./terraform
+        env:
+          # Terraform uses the Azure Login from step 1 automatically
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Optional: If you have issues, you might need this
+          
+      # --- 3. Build Application ---
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v1
         with:
@@ -23,9 +48,10 @@ jobs:
       - name: dotnet publish
         run: dotnet publish -c Release -o ${{env.DOTNET_ROOT}}/myapp
 
+      # --- 4. Deploy Application ---
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: 'student-azure-app-ejlu11' # MUST MATCH YOUR TERRAFORM NAME
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          # IMPORTANT: This name must match the name in your main.tf exactly!
+          app-name: 'faisal-azure-app-ejlu11' 
           package: ${{env.DOTNET_ROOT}}/myapp
