@@ -56,7 +56,7 @@ resource "azurerm_linux_web_app" "webapp" {
 
   # Connection string configuration
   connection_string {
-    name  = "AZURE_SQL_CONNECTIONSTRING"
+    name  = "MyDbConnection"
     type  = "SQLAzure"
     value = "Server=tcp:${azurerm_mssql_server.sqlserver.fully_qualified_domain_name},1433;Initial Catalog=${azurerm_mssql_database.db.name};Persist Security Info=False;User ID=sqladmin;Password=P@ssw0rd1234!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;"
   }
