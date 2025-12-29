@@ -6,28 +6,40 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "tfstate-rg"
+    storage_account_name = "faisalstorageejlu11"
+    container_name       = "tfstate"
+    key                  = "terraform.tfstate"
+    
+    # ⚠️ THIS ID TELLS TERRAFORM: "USE THE STUDENT ACCOUNT"
+    subscription_id      = "d7630421-2fe7-43fc-86c4-647b59ecfe84"
+  }
 }
 
 provider "azurerm" {
   features {}
+  # It is good practice to put it here too
+  subscription_id = "d7630421-2fe7-43fc-86c4-647b59ecfe84"
 }
 
-# 2. Create a Resource Group (A folder for all your cloud resources)
+# 2. Create a Resource Group
 resource "azurerm_resource_group" "rg" {
   name     = "student-project-rg"
-  location = "UK South" # You can change this to "East US" etc.
+  location = "UK South"
 }
 
-# 3. Create the App Service Plan (The computer power behind the web app)
+# 3. Create the App Service Plan
 resource "azurerm_service_plan" "plan" {
   name                = "student-app-plan"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
   os_type             = "Linux"
-  sku_name            = "F1" # F1 is the FREE tier!
+  sku_name            = "F1"
 }
 
-# 4. Create the Web App (The actual website host)
+# 4. Create the Web App
 resource "azurerm_linux_web_app" "webapp" {
   name                = "faisal-azure-app-ejlu11"
   location            = azurerm_resource_group.rg.location
@@ -35,15 +47,14 @@ resource "azurerm_linux_web_app" "webapp" {
   service_plan_id     = azurerm_service_plan.plan.id
 
   site_config {
-    # YOU MUST ADD THIS LINE FOR FREE TIER
     always_on = false
-
+    
     application_stack {
       dotnet_version = "6.0"
     }
   }
 
-  # Connection string so the app knows how to talk to the DB
+  # Connection string configuration
   connection_string {
     name  = "AZURE_SQL_CONNECTIONSTRING"
     type  = "SQLAzure"
@@ -51,14 +62,14 @@ resource "azurerm_linux_web_app" "webapp" {
   }
 }
 
-# 5. Create the SQL Server (Logical container for databases)
+# 5. Create the SQL Server
 resource "azurerm_mssql_server" "sqlserver" {
-  name                         = "faisal-sql-server-ejlu11" # CHANGE THIS to be globally unique
+  name                         = "faisal-sql-server-ejlu11"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = azurerm_resource_group.rg.location
   version                      = "12.0"
   administrator_login          = "sqladmin"
-  administrator_login_password = "P@ssw0rd1234!" # In real life, use a variable!
+  administrator_login_password = "P@ssw0rd1234!"
 }
 
 # 6. Create the Database
@@ -68,10 +79,10 @@ resource "azurerm_mssql_database" "db" {
   collation      = "SQL_Latin1_General_CP1_CI_AS"
   license_type   = "LicenseIncluded"
   max_size_gb    = 2
-  sku_name       = "S0" # Basic tier
+  sku_name       = "S0" 
 }
 
-# 7. Firewall Rule (Allow Azure services to reach the DB)
+# 7. Firewall Rule
 resource "azurerm_mssql_firewall_rule" "allow_azure_services" {
   name             = "AllowAzureServices"
   server_id        = azurerm_mssql_server.sqlserver.id

@@ -13,8 +13,6 @@ jobs:
       - uses: actions/checkout@v2
 
       # --- 1. Log into Azure ---
-      # This uses the AZURE_CREDENTIALS secret you created.
-      # It logs the 'runner' into Azure so Terraform and the Deploy step can work.
       - name: Azure Login
         uses: azure/login@v1
         with:
@@ -26,15 +24,17 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
-        working-directory: ./terraform  # <--- Points to your subfolder
+        working-directory: ./terraform
+        env:
+          # ⚠️ ADDED: Permission to access the remote state file
+          ARM_ACCESS_KEY: ${{ secrets.AZURE_STORAGE_KEY }}
 
       - name: Terraform Apply
-        # -auto-approve ensures it doesn't wait for "yes"
         run: terraform apply -auto-approve
         working-directory: ./terraform
         env:
-          # Terraform uses the Azure Login from step 1 automatically
-          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Optional, often auto-detected
+          # Optional: Usually not needed if Azure Login works, but good for safety
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           
       # --- 3. Build Application ---
       - name: Set up .NET Core
@@ -52,6 +52,5 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
-          # IMPORTANT: This name must match the name in your main.tf exactly!
           app-name: 'faisal-azure-app-ejlu11' 
           package: ${{env.DOTNET_ROOT}}/myapp
